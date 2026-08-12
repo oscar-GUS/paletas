@@ -16,9 +16,13 @@ import type { CSSProperties } from 'react'
 import { ATLAS, bloque } from '@/lib/paletas/bloques'
 import { cn } from '@/lib/cn'
 
-const { cell, cols, pad, w, h } = ATLAS
+const { archivo, cell, cols, pad, w, h } = ATLAS
 const STRIDE = (cell + 2 * pad) / cell   // celda + margen, en unidades de bloque
 const PAD    = pad / cell
+// El sprite lleva la huella de su contenido en el nombre, y el catálogo dice
+// cuál le toca: así un navegador con la imagen antigua en caché no puede pintar
+// los bloques cambiados de sitio (los índices se mueven al regenerar).
+const SPRITE = `/${archivo}`
 
 /** Estilos del sprite para un bloque. El tamaño lo da `fontSize` (1em = 1 bloque). */
 export function estiloBloque(id: string): CSSProperties | null {
@@ -29,7 +33,7 @@ export function estiloBloque(id: string): CSSProperties | null {
   return {
     width:              '1em',
     height:             '1em',
-    backgroundImage:    'url(/paletas-atlas.png)',
+    backgroundImage:    `url(${SPRITE})`,
     backgroundSize:     `${w / cell}em ${h / cell}em`,
     backgroundPosition: `-${col * STRIDE + PAD}em -${fila * STRIDE + PAD}em`,
     backgroundRepeat:   'no-repeat',

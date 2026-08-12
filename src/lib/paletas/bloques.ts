@@ -27,7 +27,11 @@ export interface BloquePaleta {
   l:    number
 }
 
-export const ATLAS = datos.atlas as { cell: number; cols: number; pad: number; w: number; h: number }
+export const ATLAS = datos.atlas as {
+  /** Nombre del sprite en /public, con la huella de su contenido. */
+  archivo: string
+  cell: number; cols: number; pad: number; w: number; h: number
+}
 
 export const BLOQUES = datos.bloques as BloquePaleta[]
 
