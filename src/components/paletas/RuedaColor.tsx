@@ -62,6 +62,10 @@ export function RuedaColor({ tono, neutro, tol = TOL_TONO, onChange }: Props) {
   }
 
   function onPointerDown(e: React.PointerEvent) {
+    // Si el toque cae en el agujero central NO se captura el puntero: ahí está
+    // el botón de neutros, y capturar hace que el `click` se dispare en este
+    // contenedor en vez de en el botón, que era justo por lo que no respondía.
+    if (tonoDesdeEvento(e) === null) return
     arrastrando.current = true
     e.currentTarget.setPointerCapture(e.pointerId)
     elegir(e)
@@ -159,7 +163,7 @@ export function RuedaColor({ tono, neutro, tol = TOL_TONO, onChange }: Props) {
           aria-pressed={neutro}
         >
           <span className="text-[11px] font-semibold leading-tight">Neutros</span>
-          <span className="text-[9px] leading-tight opacity-70">grises y<br />blancos</span>
+          <span className="text-[9px] leading-tight opacity-70">grises, blancos<br />y negros</span>
         </button>
       </div>
 
@@ -180,7 +184,9 @@ export function RuedaColor({ tono, neutro, tol = TOL_TONO, onChange }: Props) {
             </button>
           </>
         ) : neutro ? (
-          <span className="text-xs text-[#A1A1AA]">Solo paletas con neutros</span>
+          // Sin decir «paletas» ni «bloques»: la rueda filtra unas en el listado
+          // y otros en el editor, y es el mismo componente.
+          <span className="text-xs text-[#A1A1AA]">Solo grises, blancos y negros</span>
         ) : (
           <span className="text-xs text-[#52525A]">Toca el aro para filtrar por color</span>
         )}
