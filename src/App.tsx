@@ -12,8 +12,8 @@
 // a propósito: en una rejilla con scroll el arrastre pelea con el gesto de
 // desplazar, y lo que importa ahí es probar combinaciones rápido.
 //
-// Dentro de la paleta sí se arrastra, para reordenar: el orden es parte del
-// diseño y hay que poder llevarse un bloque del puesto 1 al 3.
+// Dentro de la paleta sí se arrastra, para cambiar bloques de sitio: el orden es
+// parte del diseño y hay que poder llevarse el del puesto 2 al 4 sin rehacerla.
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { BLOQUES, FAMILIAS, buscarBloques, nombreBloque, type BloquePaleta } from '@/lib/paletas/bloques'
@@ -118,11 +118,12 @@ export default function App() {
 
   // ── Reordenar arrastrando ───────────────────────────────────────────────────
   // El orden es parte del diseño de la paleta (es el que verá la gente), así que
-  // hay que poder llevarse un bloque del puesto 1 al 3 sin rehacerla.
+  // hay que poder llevarse un bloque del puesto 2 al 4 sin rehacerla.
   //
-  // Mueve, no intercambia: el bloque se saca de su sitio y se mete en el nuevo,
-  // y los de en medio corren un puesto. Es lo que hace cualquier lista
-  // reordenable y lo que se espera al «llevar este aquí».
+  // INTERCAMBIA los dos huecos, no reordena la lista. Reordenando (sacar y meter,
+  // como una lista normal) los bloques de en medio corren un puesto, y en una
+  // rejilla de 3×3 eso se ve como si se hubiera movido media paleta cuando solo
+  // querías cambiar uno de sitio.
   //
   // Va con eventos de puntero, no con la API de drag & drop de HTML: esa no
   // existe en táctil. Y como el mismo gesto sirve para quitar un bloque (un
@@ -131,6 +132,9 @@ export default function App() {
   const arrastre = useRef<{ origen: number; x: number; y: number; movido: boolean } | null>(null)
   const [origenArrastre, setOrigenArrastre] = useState<number | null>(null)
   const [destinoArrastre, setDestinoArrastre] = useState<number | null>(null)
+  // Bloque «fantasma» que sigue al puntero: sin él no se ve lo que llevas en la
+  // mano y el gesto parece que no hace nada hasta que sueltas.
+  const [fantasma, setFantasma] = useState<{ id: string; x: number; y: number; lado: number } | null>(null)
 
   // Qué hueco hay bajo el dedo, por geometría y no con elementFromPoint: el
   // hit-testing devuelve lo que se ve, y lo que se ve bajo el puntero puede ser
@@ -147,14 +151,22 @@ export default function App() {
     return null
   }
 
-  function mover(desde: number, hasta: number) {
+  function intercambiar(a: number, b: number) {
     setHuecos(prev => {
       const siguiente = [...prev]
-      const [bloque] = siguiente.splice(desde, 1)
-      siguiente.splice(hasta, 0, bloque)
+      const guarda = siguiente[a]
+      siguiente[a] = siguiente[b]
+      siguiente[b] = guarda
       return siguiente
     })
-    setActivo(hasta)
+    setActivo(b)
+  }
+
+  function soltarArrastre() {
+    arrastre.current = null
+    setOrigenArrastre(null)
+    setDestinoArrastre(null)
+    setFantasma(null)
   }
 
   function alPulsarHueco(e: React.PointerEvent, i: number) {
@@ -170,23 +182,28 @@ export default function App() {
   function alMoverPuntero(e: React.PointerEvent) {
     const a = arrastre.current
     if (!a) return
+    const id = huecos[a.origen]
     if (!a.movido) {
       if (Math.hypot(e.clientX - a.x, e.clientY - a.y) < 6) return
       a.movido = true
       setOrigenArrastre(a.origen)
     }
     setDestinoArrastre(huecoBajoElPunto(e.clientX, e.clientY))
+    if (id) {
+      // El lado se mide del propio hueco: así el fantasma es del tamaño real
+      // que tiene la rejilla en ese momento, que depende del ancho disponible.
+      const lado = e.currentTarget.getBoundingClientRect().width
+      setFantasma({ id, x: e.clientX, y: e.clientY, lado })
+    }
   }
 
   function alSoltarHueco(e: React.PointerEvent, i: number) {
     const a = arrastre.current
-    arrastre.current = null
-    setOrigenArrastre(null)
-    setDestinoArrastre(null)
+    soltarArrastre()
     if (!a) return
     if (!a.movido) { vaciarHueco(i); return }  // no llegó a ser un arrastre: era un toque
     const destino = huecoBajoElPunto(e.clientX, e.clientY)
-    if (destino !== null && destino !== a.origen) mover(a.origen, destino)
+    if (destino !== null && destino !== a.origen) intercambiar(a.origen, destino)
   }
 
   function barajar() {
@@ -269,8 +286,8 @@ export default function App() {
                     onPointerDown={e => alPulsarHueco(e, i)}
                     onPointerMove={alMoverPuntero}
                     onPointerUp={e => alSoltarHueco(e, i)}
-                    onPointerCancel={() => { arrastre.current = null; setOrigenArrastre(null); setDestinoArrastre(null) }}
-                    title={id ? `${nombreBloque(id)} — arrastra para moverlo, toca para quitarlo` : 'Hueco vacío'}
+                    onPointerCancel={soltarArrastre}
+                    title={id ? `${nombreBloque(id)} — arrastra para cambiarlo de sitio, toca para quitarlo` : 'Hueco vacío'}
                     // touch-none: sin esto, arrastrar en el móvil desplaza la
                     // página en vez de mover el bloque.
                     className={cn(
@@ -513,6 +530,24 @@ export default function App() {
           )}
         </div>
       </div>
+
+      {/* El bloque que llevas en la mano. Va en `fixed` y fuera de la rejilla
+          para no empujar nada, y con pointer-events desactivados para no taparse
+          a sí mismo el hueco que hay debajo. */}
+      {fantasma && (
+        <span
+          aria-hidden="true"
+          className="pointer-events-none fixed z-50 rounded-md ring-2 ring-naranja shadow-lg shadow-black/50"
+          style={{
+            ...estiloBloque(fantasma.id),
+            fontSize: fantasma.lado,
+            left: fantasma.x,
+            top: fantasma.y,
+            transform: 'translate(-50%, -50%) scale(1.08)',
+            opacity: 0.92,
+          }}
+        />
+      )}
     </div>
   )
 }
