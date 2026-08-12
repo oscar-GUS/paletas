@@ -49,10 +49,11 @@ export default function App() {
   const [error, setError]       = useState<string | null>(null)
   const [enviando, setEnviando] = useState(false)
   const [logueado, setLogueado] = useState<boolean | null>(null)
+  const [admin, setAdmin]       = useState(false)
   const [mias, setMias]         = useState<PaletaMia[]>([])
 
   useEffect(() => {
-    cargarSesion().then(s => { setLogueado(s.logueado); setMias(s.paletas) })
+    cargarSesion().then(s => { setLogueado(s.logueado); setAdmin(s.admin); setMias(s.paletas) })
   }, [])
 
   const puestos  = huecos.filter(Boolean) as string[]
@@ -276,15 +277,16 @@ export default function App() {
               className="mt-4 w-full h-11 rounded-[10px] bg-naranja text-white text-sm font-semibold hover:bg-[#e07018] transition-colors disabled:opacity-50 disabled:hover:bg-naranja"
             >
               {enviando
-                ? 'Enviando…'
+                ? (admin ? 'Publicando…' : 'Enviando…')
                 : completa
-                  ? 'Enviar a revisión'
+                  ? (admin ? 'Publicar' : 'Enviar a revisión')
                   : `Elige ${tamano - puestos.length} bloque${tamano - puestos.length === 1 ? '' : 's'} más`}
             </button>
           )}
           <p className="mt-2 text-[11px] text-[#52525A] leading-relaxed">
-            Las paletas pasan una revisión rápida antes de publicarse. Cuando se apruebe te llega una
-            notificación y ganas XP.
+            {admin
+              ? 'Como admin, tu paleta se publica al momento y no pasa por la cola de revisión.'
+              : 'Las paletas pasan una revisión rápida antes de publicarse. Cuando se apruebe te llega una notificación y ganas XP.'}
           </p>
 
           {/* Mis paletas */}

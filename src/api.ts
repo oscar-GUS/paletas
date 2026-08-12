@@ -20,16 +20,18 @@ export interface PaletaMia {
 
 export interface Sesion {
   logueado: boolean
+  /** Un admin no pasa por la cola: su paleta se publica al momento. */
+  admin:    boolean
   paletas:  PaletaMia[]
 }
 
 export async function cargarSesion(): Promise<Sesion> {
   try {
     const r = await fetch('/api/paletas/mias', { credentials: 'same-origin' })
-    if (!r.ok) return { logueado: false, paletas: [] }
+    if (!r.ok) return { logueado: false, admin: false, paletas: [] }
     return await r.json()
   } catch {
-    return { logueado: false, paletas: [] }
+    return { logueado: false, admin: false, paletas: [] }
   }
 }
 
