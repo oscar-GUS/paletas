@@ -128,20 +128,23 @@ export default function App() {
     setActivo(i)
   }
 
-  // ── Reordenar arrastrando ───────────────────────────────────────────────────
-  // El orden es parte del diseño de la paleta (es el que verá la gente), así que
-  // hay que poder llevarse un bloque del puesto 2 al 4 sin rehacerla.
+  // ── Arrastrar ───────────────────────────────────────────────────────────────
+  // Dos gestos con el mismo motor:
+  //   · del catálogo a un hueco, para colocar un bloque donde quieres;
+  //   · de un hueco a otro, para cambiarlos de sitio.
   //
-  // INTERCAMBIA los dos huecos, no reordena la lista. Reordenando (sacar y meter,
-  // como una lista normal) los bloques de en medio corren un puesto, y en una
-  // rejilla de 3×3 eso se ve como si se hubiera movido media paleta cuando solo
-  // querías cambiar uno de sitio.
+  // Entre huecos INTERCAMBIA, no reordena. Reordenando (sacar y meter, como una
+  // lista normal) los bloques de en medio corren un puesto, y en una rejilla de
+  // 3×3 eso se ve como si se hubiera movido media paleta cuando solo querías
+  // cambiar uno de sitio.
   //
   // Va con eventos de puntero, no con la API de drag & drop de HTML: esa no
-  // existe en táctil. Y como el mismo gesto sirve para quitar un bloque (un
-  // toque), hace falta un umbral de unos píxeles para saber si has arrastrado o
-  // solo has tocado.
-  const arrastre = useRef<{ origen: number; x: number; y: number; movido: boolean } | null>(null)
+  // existe en táctil. Y como el mismo gesto sirve para tocar (poner un bloque o
+  // quitarlo), hace falta un umbral de unos píxeles para saber si has arrastrado
+  // o solo has tocado.
+  //
+  // `origen` null = viene del catálogo.
+  const arrastre = useRef<{ origen: number | null; id: string; x: number; y: number; lado: number; movido: boolean } | null>(null)
   const [origenArrastre, setOrigenArrastre] = useState<number | null>(null)
   const [destinoArrastre, setDestinoArrastre] = useState<number | null>(null)
   // Bloque «fantasma» que sigue al puntero: sin él no se ve lo que llevas en la
@@ -181,32 +184,58 @@ export default function App() {
     setFantasma(null)
   }
 
-  function alPulsarHueco(e: React.PointerEvent, i: number) {
-    if (!huecos[i]) { setActivo(i); return }   // un hueco vacío solo se apunta
-    arrastre.current = { origen: i, x: e.clientX, y: e.clientY, movido: false }
-    // Capturar el puntero mantiene los eventos en este botón aunque el dedo se
-    // salga de él. Si el navegador no puede (o el puntero ya no está activo) no
-    // pasa nada grave: el arrastre sigue funcionando mientras no salgas de la
+  /** Coloca un bloque en un hueco concreto, sustituyendo lo que hubiera. */
+  function colocarEn(i: number, id: string) {
+    setHuecos(prev => {
+      const siguiente = [...prev]
+      // Si ese bloque ya estaba en otro hueco, se mueve en vez de duplicarse:
+      // una paleta con el mismo bloque dos veces no se puede publicar.
+      const yaEsta = siguiente.indexOf(id)
+      if (yaEsta !== -1) siguiente[yaEsta] = null
+      siguiente[i] = id
+      return siguiente
+    })
+    setActivo(i)
+  }
+
+  function empezarArrastre(e: React.PointerEvent, id: string, origen: number | null) {
+    arrastre.current = {
+      origen, id,
+      x: e.clientX, y: e.clientY,
+      lado: e.currentTarget.getBoundingClientRect().width,
+      movido: false,
+    }
+    // Capturar el puntero mantiene los eventos en este elemento aunque el dedo
+    // se salga de él. Si el navegador no puede (o el puntero ya no está activo)
+    // no pasa nada grave: el arrastre sigue funcionando mientras no salgas de la
     // rejilla, así que no hay que dejar que reviente el gesto entero.
     try { e.currentTarget.setPointerCapture(e.pointerId) } catch { /* da igual */ }
+  }
+
+  function alPulsarHueco(e: React.PointerEvent, i: number) {
+    const id = huecos[i]
+    if (!id) { setActivo(i); return }   // un hueco vacío solo se apunta
+    empezarArrastre(e, id, i)
+  }
+
+  function alPulsarCatalogo(e: React.PointerEvent, id: string) {
+    // En táctil NO se arrastra desde el catálogo: es una rejilla larga con
+    // scroll, y capturar el gesto ahí impediría desplazarse con el dedo. El
+    // toque sigue colocando el bloque, que es como se usa en el móvil.
+    if (e.pointerType === 'touch') return
+    empezarArrastre(e, id, null)
   }
 
   function alMoverPuntero(e: React.PointerEvent) {
     const a = arrastre.current
     if (!a) return
-    const id = huecos[a.origen]
     if (!a.movido) {
       if (Math.hypot(e.clientX - a.x, e.clientY - a.y) < 6) return
       a.movido = true
       setOrigenArrastre(a.origen)
     }
     setDestinoArrastre(huecoBajoElPunto(e.clientX, e.clientY))
-    if (id) {
-      // El lado se mide del propio hueco: así el fantasma es del tamaño real
-      // que tiene la rejilla en ese momento, que depende del ancho disponible.
-      const lado = e.currentTarget.getBoundingClientRect().width
-      setFantasma({ id, x: e.clientX, y: e.clientY, lado })
-    }
+    setFantasma({ id: a.id, x: e.clientX, y: e.clientY, lado: a.lado })
   }
 
   function alSoltarHueco(e: React.PointerEvent, i: number) {
@@ -215,7 +244,17 @@ export default function App() {
     if (!a) return
     if (!a.movido) { vaciarHueco(i); return }  // no llegó a ser un arrastre: era un toque
     const destino = huecoBajoElPunto(e.clientX, e.clientY)
-    if (destino !== null && destino !== a.origen) intercambiar(a.origen, destino)
+    if (destino !== null && destino !== a.origen) intercambiar(a.origen!, destino)
+  }
+
+  function alSoltarCatalogo(e: React.PointerEvent, b: BloquePaleta) {
+    const a = arrastre.current
+    soltarArrastre()
+    // Sin arrastre (o en táctil, donde ni se inicia) es un clic de toda la vida:
+    // el bloque va al hueco apuntado, como antes.
+    if (!a || !a.movido) { poner(b); return }
+    const destino = huecoBajoElPunto(e.clientX, e.clientY)
+    if (destino !== null) colocarEn(destino, b.id)
   }
 
   function barajar() {
@@ -520,7 +559,10 @@ export default function App() {
                   <button
                     key={b.id}
                     type="button"
-                    onClick={() => poner(b)}
+                    onPointerDown={e => alPulsarCatalogo(e, b.id)}
+                    onPointerMove={alMoverPuntero}
+                    onPointerUp={e => alSoltarCatalogo(e, b)}
+                    onPointerCancel={soltarArrastre}
                     title={`${nombreBloque(b.id)} · ${b.hex}`}
                     className={cn(
                       'relative aspect-square rounded-md overflow-hidden transition-all',

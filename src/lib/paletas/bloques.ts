@@ -102,18 +102,27 @@ export const FAMILIA_LABEL: Record<string, string> =
 
 // ── Búsqueda ──────────────────────────────────────────────────────────────────
 // Índice de texto precalculado (id + nombre ES sin acentos) para que teclear en
-// el selector no recalcule 302 displayName() por pulsación.
+// el selector no recalcule un nombre por bloque en cada pulsación.
 const DIACRITICOS = /[̀-ͯ]/g
 const sinAcentos = (s: string) => s.normalize('NFD').replace(DIACRITICOS, '').toLowerCase()
 
+// Con nombreBloque(), no con displayName(): así el sufijo de las vistas
+// alternativas («desde arriba») también se puede buscar, y «tapa» encuentra lo
+// mismo aunque no sea la palabra que usa el nombre.
 const INDICE: { b: BloquePaleta; texto: string }[] = BLOQUES.map(b => ({
   b,
-  texto: sinAcentos(`${b.id} ${displayName(b.id)}`),
+  texto: sinAcentos(`${b.id} ${nombreBloque(b.id)}${b.vista === 'arriba' ? ' tapa' : ''}`),
 }))
 
-/** Bloques cuyo id o nombre ES contiene la consulta. Sin consulta, todos. */
+/**
+ * Bloques cuyo id o nombre casan con la consulta. Sin consulta, todos.
+ *
+ * Se exigen TODAS las palabras, pero no seguidas: «pelado roble» encuentra
+ * «Tronco pelado de roble», que con una búsqueda literal no salía porque entre
+ * medias hay un «de».
+ */
 export function buscarBloques(q: string): BloquePaleta[] {
-  const t = sinAcentos(q.trim())
-  if (!t) return BLOQUES
-  return INDICE.filter(e => e.texto.includes(t)).map(e => e.b)
+  const palabras = sinAcentos(q.trim()).split(/\s+/).filter(Boolean)
+  if (palabras.length === 0) return BLOQUES
+  return INDICE.filter(e => palabras.every(p => e.texto.includes(p))).map(e => e.b)
 }
