@@ -47,7 +47,9 @@ export function nombreBloque(id: string): string {
 }
 
 // ── Familias ──────────────────────────────────────────────────────────────────
-// El orden es el del selector del creador de paletas.
+// El orden es el del selector del creador de paletas: primero lo que más se usa
+// para construir. Los ids los asigna tools/build-palette-blocks.mjs, así que las
+// dos listas tienen que moverse juntas.
 export const FAMILIAS: { id: string; label: string }[] = [
   { id: 'piedra',    label: 'Piedra' },
   { id: 'madera',    label: 'Madera' },
@@ -60,9 +62,13 @@ export const FAMILIAS: { id: string; label: string }[] = [
   { id: 'vidriada',  label: 'Terracota vidriada' },
   { id: 'cristal',   label: 'Cristal' },
   { id: 'metal',     label: 'Metal y mineral' },
+  { id: 'menas',     label: 'Menas' },
   { id: 'nether',    label: 'Nether' },
   { id: 'end',       label: 'End' },
   { id: 'marino',    label: 'Marino' },
+  { id: 'natural',   label: 'Natural' },
+  { id: 'redstone',  label: 'Redstone' },
+  { id: 'utilidad',  label: 'Utilidad' },
   { id: 'otros',     label: 'Otros' },
 ]
 

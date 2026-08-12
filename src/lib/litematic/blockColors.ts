@@ -35,8 +35,8 @@ const TERRACOTTA_BASE: RGB = [152, 94, 67]
 // ── Maderas (color de tablones) ───────────────────────────────────────────────
 const WOOD: Record<string, RGB> = {
   oak: [162, 130, 78], spruce: [114, 84, 48], birch: [196, 179, 123], jungle: [160, 115, 80],
-  acacia: [168, 90, 50], dark_oak: [66, 43, 20], mangrove: [117, 54, 48], cherry: [226, 167, 168],
-  bamboo: [193, 171, 76], crimson: [124, 55, 84], warped: [43, 104, 99],
+  acacia: [168, 90, 50], dark_oak: [66, 43, 20], pale_oak: [228, 218, 216], mangrove: [117, 54, 48],
+  cherry: [226, 167, 168], bamboo: [193, 171, 76], crimson: [124, 55, 84], warped: [43, 104, 99],
 }
 const WOOD_KEYS = Object.keys(WOOD)
 

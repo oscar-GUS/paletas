@@ -23,8 +23,8 @@ const DYE_MATERIAL_ES: Array<[string, string]> = [
 
 const WOOD_ES: Record<string, string> = {
   oak: 'roble', spruce: 'abeto', birch: 'abedul', jungle: 'jungla', acacia: 'acacia',
-  dark_oak: 'roble oscuro', mangrove: 'mangle', cherry: 'cerezo', bamboo: 'bambú',
-  crimson: 'carmesí', warped: 'distorsionado',
+  dark_oak: 'roble oscuro', pale_oak: 'roble pálido', mangrove: 'mangle', cherry: 'cerezo',
+  bamboo: 'bambú', crimson: 'carmesí', warped: 'distorsionado',
 }
 const WOOD_KEYS = Object.keys(WOOD_ES)
 
@@ -105,6 +105,71 @@ const EXACT_ES: Record<string, string> = {
   vine: 'Enredadera', lily_pad: 'Nenúfar', short_grass: 'Hierba', tall_grass: 'Hierba alta',
   fern: 'Helecho', large_fern: 'Helecho grande', dead_bush: 'Arbusto seco', cobweb: 'Telaraña',
   scaffolding: 'Andamio', spawner: 'Generador de monstruos',
+  // Bloques de construcción que caían al respaldo y salían en inglés en la lista
+  // de materiales y en las paletas.
+  polished_tuff: 'Toba pulida', tuff_bricks: 'Ladrillos de toba',
+  chiseled_tuff: 'Toba cincelada', chiseled_tuff_bricks: 'Ladrillos de toba cincelados',
+  cracked_deepslate_bricks: 'Ladrillos de pizarra profunda agrietados',
+  cracked_deepslate_tiles: 'Baldosas de pizarra profunda agrietadas',
+  chiseled_deepslate: 'Pizarra profunda cincelada', reinforced_deepslate: 'Pizarra profunda reforzada',
+  cracked_polished_blackstone_bricks: 'Ladrillos de piedra negra pulida agrietados',
+  chiseled_polished_blackstone: 'Piedra negra pulida cincelada',
+  cut_red_sandstone: 'Arenisca roja cortada', chiseled_red_sandstone: 'Arenisca roja cincelada',
+  smooth_red_sandstone: 'Arenisca roja lisa',
+  pale_moss_block: 'Bloque de musgo pálido',
+  bamboo_mosaic: 'Mosaico de bambú', bamboo_block: 'Bloque de bambú',
+  azalea_leaves: 'Hojas de azalea', flowering_azalea_leaves: 'Hojas de azalea en flor',
+  bone_block: 'Bloque de huesos', terracotta: 'Terracota',
+  honeycomb_block: 'Bloque de panal',
+  // Cobre y su oxidación
+  exposed_copper: 'Cobre expuesto', weathered_copper: 'Cobre desgastado', oxidized_copper: 'Cobre oxidado',
+  cut_copper: 'Cobre cortado', exposed_cut_copper: 'Cobre cortado expuesto',
+  weathered_cut_copper: 'Cobre cortado desgastado', oxidized_cut_copper: 'Cobre cortado oxidado',
+  chiseled_copper: 'Cobre cincelado', exposed_chiseled_copper: 'Cobre cincelado expuesto',
+  weathered_chiseled_copper: 'Cobre cincelado desgastado', oxidized_chiseled_copper: 'Cobre cincelado oxidado',
+  copper_grate: 'Rejilla de cobre', exposed_copper_grate: 'Rejilla de cobre expuesta',
+  weathered_copper_grate: 'Rejilla de cobre desgastada', oxidized_copper_grate: 'Rejilla de cobre oxidada',
+  copper_bulb: 'Bombilla de cobre',
+  // Nether y End
+  cracked_nether_bricks: 'Ladrillos del Nether agrietados',
+  chiseled_nether_bricks: 'Ladrillos del Nether cincelados',
+  crimson_nylium: 'Nilio carmesí', warped_nylium: 'Nilio distorsionado',
+  resin_block: 'Bloque de resina', resin_bricks: 'Ladrillos de resina',
+  chiseled_resin_bricks: 'Ladrillos de resina cincelados',
+  // Marino y setas
+  prismarine: 'Prismarina', prismarine_bricks: 'Ladrillos de prismarina',
+  dark_prismarine: 'Prismarina oscura',
+  red_mushroom_block: 'Bloque de seta roja', brown_mushroom_block: 'Bloque de seta marrón',
+  mushroom_stem: 'Tallo de seta',
+  // Corales (bloque vivo y su versión muerta)
+  tube_coral_block: 'Coral tubo', brain_coral_block: 'Coral cerebro',
+  bubble_coral_block: 'Coral burbuja', fire_coral_block: 'Coral fuego',
+  horn_coral_block: 'Coral cuerno',
+  dead_tube_coral_block: 'Coral tubo muerto', dead_brain_coral_block: 'Coral cerebro muerto',
+  dead_bubble_coral_block: 'Coral burbuja muerto', dead_fire_coral_block: 'Coral fuego muerto',
+  dead_horn_coral_block: 'Coral cuerno muerto',
+  // Luz y bloques de bicho
+  ochre_froglight: 'Ranaluz ocre', verdant_froglight: 'Ranaluz verdeante',
+  pearlescent_froglight: 'Ranaluz perlado',
+  bee_nest: 'Nido de abejas', beehive: 'Colmena',
+  // Utilidad y decoración
+  jukebox: 'Tocadiscos', chiseled_bookshelf: 'Estantería cincelada', crafter: 'Fabricador',
+  trial_spawner: 'Generador de pruebas', vault: 'Cámara acorazada',
+  creaking_heart: 'Corazón del crujiente', frosted_ice: 'Hielo escarchado',
+  // Cobre: las bombillas que faltaban
+  exposed_copper_bulb: 'Bombilla de cobre expuesta',
+  weathered_copper_bulb: 'Bombilla de cobre desgastada',
+  oxidized_copper_bulb: 'Bombilla de cobre oxidada',
+  // Naturaleza y arqueología (cactus, podzol y sculk ya están arriba: se llaman
+  // igual en español, por eso parecen sin traducir).
+  suspicious_sand: 'Arena sospechosa', suspicious_gravel: 'Grava sospechosa',
+  muddy_mangrove_roots: 'Raíces de mangle embarradas',
+  stripped_bamboo_block: 'Bloque de bambú pelado',
+  // Cinabrio y azufre (material de construcción nuevo)
+  cinnabar: 'Cinabrio', polished_cinnabar: 'Cinabrio pulido',
+  cinnabar_bricks: 'Ladrillos de cinabrio', chiseled_cinnabar: 'Cinabrio cincelado',
+  sulfur: 'Azufre', potent_sulfur: 'Azufre potente', polished_sulfur: 'Azufre pulido',
+  sulfur_bricks: 'Ladrillos de azufre', chiseled_sulfur: 'Azufre cincelado',
 }
 
 export function displayName(name: string): string {
