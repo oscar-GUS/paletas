@@ -25,6 +25,14 @@ export interface BloquePaleta {
   s:    number
   /** Luminosidad 0-100. */
   l:    number
+  /**
+   * Id REAL del bloque cuando esta entrada es otra vista del mismo (un tronco
+   * pelado de canto y por la tapa son el mismo bloque en distinto eje). Es lo
+   * que va al comando y a la lista de materiales.
+   */
+  base?: string
+  /** Qué cara enseña esta entrada, si no es la de por defecto. */
+  vista?: 'arriba'
 }
 
 export const ATLAS = datos.atlas as {
@@ -45,9 +53,22 @@ export function esBloqueValido(id: string): boolean {
   return POR_ID.has(id)
 }
 
+/**
+ * Id REAL de Minecraft: para las entradas que son otra vista del mismo bloque
+ * (el tronco pelado por la tapa) devuelve el id de verdad. Es lo que tiene que
+ * ir a un comando o a una lista de materiales.
+ */
+export function idReal(id: string): string {
+  return POR_ID.get(id)?.base ?? id
+}
+
 /** Nombre en español del bloque ("Tablones de roble"). */
 export function nombreBloque(id: string): string {
-  return displayName(id)
+  const b = POR_ID.get(id)
+  const nombre = displayName(b?.base ?? id)
+  // Entre paréntesis, no con «·»: ese separador ya se usa para encadenar cosas
+  // (el nombre del bloque y su color en un mismo title, por ejemplo).
+  return b?.vista === 'arriba' ? `${nombre} (desde arriba)` : nombre
 }
 
 // ── Familias ──────────────────────────────────────────────────────────────────

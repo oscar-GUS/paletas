@@ -37,6 +37,12 @@ const WOOD_MATERIAL_ES: Array<[string, string]> = [
   ['wood', 'Madera'], ['stem', 'Tallo'], ['hyphae', 'Hifa'], ['fungus', 'Hongo'],
 ]
 
+// «Pelado» concuerda con el material, que no siempre es masculino: salía «Madera
+// pelado de acacia».
+const PELADO_ES: Record<string, string> = {
+  log: 'pelado', stem: 'pelado', wood: 'pelada', hyphae: 'pelada',
+}
+
 const EXACT_ES: Record<string, string> = {
   air: 'Aire',
   stone: 'Piedra', granite: 'Granito', diorite: 'Diorita', andesite: 'Andesita',
@@ -196,7 +202,7 @@ export function displayName(name: string): string {
       const suffix = woodBase.slice(w.length + 1)
       for (const [key, label] of WOOD_MATERIAL_ES) {
         if (suffix.includes(key)) {
-          const mat = stripped && (key === 'log' || key === 'wood') ? `${label} pelado` : label
+          const mat = stripped && PELADO_ES[key] ? `${label} ${PELADO_ES[key]}` : label
           return `${mat} de ${WOOD_ES[w]}`
         }
       }

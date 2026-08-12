@@ -59,6 +59,18 @@ export default function App() {
     cargarSesion().then(s => { setLogueado(s.logueado); setAdmin(s.admin); setMias(s.paletas) })
   }, [])
 
+  // Cerrar la rueda de color al tocar fuera. Sin esto hay que volver al botón
+  // para quitarla de en medio, justo cuando lo que quieres es ir al catálogo.
+  const panelColor = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!abrirColor) return
+    function fuera(e: MouseEvent) {
+      if (panelColor.current && !panelColor.current.contains(e.target as Node)) setAbrirColor(false)
+    }
+    document.addEventListener('mousedown', fuera)
+    return () => document.removeEventListener('mousedown', fuera)
+  }, [abrirColor])
+
   const puestos  = huecos.filter(Boolean) as string[]
   const completa = puestos.length === tamano
   const analisis = useMemo(() => analizarPaleta(puestos), [puestos])
@@ -417,7 +429,7 @@ export default function App() {
         <div>
           <div className="flex flex-wrap items-center gap-2 mb-3">
             {/* Color */}
-            <div className="relative">
+            <div className="relative" ref={panelColor}>
               <button
                 type="button"
                 onClick={() => setAbrirColor(o => !o)}
