@@ -8,11 +8,14 @@
 //
 // Modelo de interacción: la paleta son N huecos y el catálogo es la fuente. Se
 // toca un hueco para apuntarlo (o se deja el primero libre) y se toca un bloque
-// para colocarlo; tocar un bloque ya puesto lo quita. Sin drag & drop a
-// propósito: en móvil el arrastre dentro de una rejilla con scroll pelea con el
-// gesto de desplazar, y aquí lo que importa es probar combinaciones rápido.
+// para colocarlo; tocar un bloque ya puesto lo quita. El catálogo NO se arrastra
+// a propósito: en una rejilla con scroll el arrastre pelea con el gesto de
+// desplazar, y lo que importa ahí es probar combinaciones rápido.
+//
+// Dentro de la paleta sí se arrastra, para reordenar: el orden es parte del
+// diseño y hay que poder llevarse un bloque del puesto 1 al 3.
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { BLOQUES, FAMILIAS, buscarBloques, nombreBloque, type BloquePaleta } from '@/lib/paletas/bloques'
 import { analizarPaleta, distanciaTono, nombreTono, SAT_MIN, TOL_TONO } from '@/lib/paletas/color'
 import { estiloBloque } from '@/components/paletas/BloqueIcono'
@@ -113,6 +116,79 @@ export default function App() {
     setActivo(i)
   }
 
+  // ── Reordenar arrastrando ───────────────────────────────────────────────────
+  // El orden es parte del diseño de la paleta (es el que verá la gente), así que
+  // hay que poder llevarse un bloque del puesto 1 al 3 sin rehacerla.
+  //
+  // Mueve, no intercambia: el bloque se saca de su sitio y se mete en el nuevo,
+  // y los de en medio corren un puesto. Es lo que hace cualquier lista
+  // reordenable y lo que se espera al «llevar este aquí».
+  //
+  // Va con eventos de puntero, no con la API de drag & drop de HTML: esa no
+  // existe en táctil. Y como el mismo gesto sirve para quitar un bloque (un
+  // toque), hace falta un umbral de unos píxeles para saber si has arrastrado o
+  // solo has tocado.
+  const arrastre = useRef<{ origen: number; x: number; y: number; movido: boolean } | null>(null)
+  const [origenArrastre, setOrigenArrastre] = useState<number | null>(null)
+  const [destinoArrastre, setDestinoArrastre] = useState<number | null>(null)
+
+  // Qué hueco hay bajo el dedo, por geometría y no con elementFromPoint: el
+  // hit-testing devuelve lo que se ve, y lo que se ve bajo el puntero puede ser
+  // cualquier otra cosa (el propio bloque que arrastras, un overlay). Comparar
+  // con los rectángulos es igual de barato — son 12 como mucho — y no falla.
+  function huecoBajoElPunto(x: number, y: number): number | null {
+    for (const el of Array.from(document.querySelectorAll<HTMLElement>('[data-hueco]'))) {
+      const r = el.getBoundingClientRect()
+      if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) {
+        const n = Number(el.dataset.hueco)
+        if (Number.isInteger(n)) return n
+      }
+    }
+    return null
+  }
+
+  function mover(desde: number, hasta: number) {
+    setHuecos(prev => {
+      const siguiente = [...prev]
+      const [bloque] = siguiente.splice(desde, 1)
+      siguiente.splice(hasta, 0, bloque)
+      return siguiente
+    })
+    setActivo(hasta)
+  }
+
+  function alPulsarHueco(e: React.PointerEvent, i: number) {
+    if (!huecos[i]) { setActivo(i); return }   // un hueco vacío solo se apunta
+    arrastre.current = { origen: i, x: e.clientX, y: e.clientY, movido: false }
+    // Capturar el puntero mantiene los eventos en este botón aunque el dedo se
+    // salga de él. Si el navegador no puede (o el puntero ya no está activo) no
+    // pasa nada grave: el arrastre sigue funcionando mientras no salgas de la
+    // rejilla, así que no hay que dejar que reviente el gesto entero.
+    try { e.currentTarget.setPointerCapture(e.pointerId) } catch { /* da igual */ }
+  }
+
+  function alMoverPuntero(e: React.PointerEvent) {
+    const a = arrastre.current
+    if (!a) return
+    if (!a.movido) {
+      if (Math.hypot(e.clientX - a.x, e.clientY - a.y) < 6) return
+      a.movido = true
+      setOrigenArrastre(a.origen)
+    }
+    setDestinoArrastre(huecoBajoElPunto(e.clientX, e.clientY))
+  }
+
+  function alSoltarHueco(e: React.PointerEvent, i: number) {
+    const a = arrastre.current
+    arrastre.current = null
+    setOrigenArrastre(null)
+    setDestinoArrastre(null)
+    if (!a) return
+    if (!a.movido) { vaciarHueco(i); return }  // no llegó a ser un arrastre: era un toque
+    const destino = huecoBajoElPunto(e.clientX, e.clientY)
+    if (destino !== null && destino !== a.origen) mover(a.origen, destino)
+  }
+
   function barajar() {
     // Rellena los huecos que falten con bloques al azar de lo que hay filtrado:
     // es la forma más rápida de salir de un bloqueo creativo.
@@ -189,13 +265,21 @@ export default function App() {
                   <button
                     key={i}
                     type="button"
-                    onClick={() => (id ? vaciarHueco(i) : setActivo(i))}
-                    title={id ? `${nombreBloque(id)} — tocar para quitar` : 'Hueco vacío'}
+                    data-hueco={i}
+                    onPointerDown={e => alPulsarHueco(e, i)}
+                    onPointerMove={alMoverPuntero}
+                    onPointerUp={e => alSoltarHueco(e, i)}
+                    onPointerCancel={() => { arrastre.current = null; setOrigenArrastre(null); setDestinoArrastre(null) }}
+                    title={id ? `${nombreBloque(id)} — arrastra para moverlo, toca para quitarlo` : 'Hueco vacío'}
+                    // touch-none: sin esto, arrastrar en el móvil desplaza la
+                    // página en vez de mover el bloque.
                     className={cn(
-                      'relative rounded-md transition-all',
+                      'relative rounded-md transition-all touch-none',
                       !id && 'border-2 border-dashed',
                       !id && (activo === i ? 'border-naranja bg-naranja/5' : 'border-borde'),
                       id && activo === i && 'ring-2 ring-naranja',
+                      origenArrastre === i && 'opacity-40',
+                      destinoArrastre === i && origenArrastre !== null && origenArrastre !== i && 'ring-2 ring-naranja scale-105',
                     )}
                     style={{ width: '1em', height: '1em', ...(estilo ?? {}) }}
                   >
