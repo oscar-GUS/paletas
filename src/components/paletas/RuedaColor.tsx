@@ -1,4 +1,10 @@
-// Rueda de tono del filtro de paletas.
+// Rueda de tono.
+//
+// OJO: el listado (/herramientas/paletas) ya NO la usa — filtrar por «toca este
+// tono» daba demasiados falsos positivos, y ese filtro volverá cuando sea por
+// porcentaje de cada color. Este archivo sigue vivo porque el CREADOR de paletas
+// sí la usa para filtrar el catálogo de bloques, y lo recibe por
+// tools/sync-paletas.mjs. No lo borres.
 //
 // El tono es continuo (0-359) y se elige arrastrando sobre el anillo. El arco
 // claro marca la tolerancia: es lo que de verdad se está buscando, no un punto.
